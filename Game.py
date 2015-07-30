@@ -3,9 +3,11 @@
 #{"territory": 2,"num_armies": 3}, {"territory": 4, "num_armies": 3}
 
 import Brisk
-import time
+import time, random 
 
 class Game(object):
+
+	EASY_CONTINENT_LIMIT = 2
 
 	def __init__(self):
 		self.api = Brisk.Brisk()
@@ -34,6 +36,18 @@ class Game(object):
 	def target_territory(self, t_id):
 		pass
 
+
+	def helper_calc_army_around_enemy_territories(self):
+		self.adjacent_armies = {}
+		for t_id in self.enemy_territories:
+			t = self.territories[t_id]
+			self.adjacent_armies[t['territory']] = 0
+			for adjacent_t in t['adjacent_territories']:
+				if adjacent_t in self.own_territories:
+					self.adjacent_armies[t['territory']] += self.own_territories[adjacent_t]['num_armies']
+
+		print self.adjacent_armies
+
 	def updateGameState(self):
 		self.player_state = self.api.get_player_status()
 		self.own_territories = self.list_to_dict(self.player_state['territories'], 'territory')
@@ -47,19 +61,16 @@ class Game(object):
 		self.number_of_armies = {}
 		self.enemy_armies = {}
 
-		for key in self.continents:
-			c = self.continents[key]
+		for c in self.continents.itervalues():
 			c_id = c['continent']
 			self.to_be_captured[c_id] = []
 			count = 0
 			army_count = 0
 			enemy_count = 0
-			for key in self.own_territories:
-				t = self.own_territories[key]
+			for t in self.own_territories.itervalues():
 				if t['territory'] in c['territories']:
 					army_count += t['num_armies']
-			for key in self.enemy_territories:
-				t = self.enemy_territories[key]
+			for t in self.enemy_territories.itervalues():
 				if t['territory'] in c['territories']:
 					enemy_count += t['num_armies']
 					self.to_be_captured[c_id].append(t['territory'])
@@ -67,17 +78,28 @@ class Game(object):
 			self.number_of_armies[c_id] = army_count
 			self.enemy_armies[c_id] = enemy_count
 
+		self.helper_calc_army_around_enemy_territories()
+
 		# print self.player_state
 		# print self.enemy_state
 
 	def attack(self):
+		# attacked = False
+		# for c in self.continents.itervalues():
+		# 	c_id = c['continent']
+		# 	if len(self.to_be_captured[c_id]) < EASY_CONTINENT_LIMIT:
+		# 		self.target_continent(c_id)
+		# 		attacked = True
+		# 		break
+		# if (not attacked):
 		pass
+
 
 	def defend(self):
 		pass
 
 	def play(self):
 		self.updateGameState()
-		self.attack()
+		# self.attack()
 	
 
