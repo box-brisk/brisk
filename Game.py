@@ -45,18 +45,18 @@ class Game(object):
 		for diff in army_differences:
 			if diff[1] < 0:
 				if abs(diff[1]) <= armies_to_place:
-					place_armies(diff[0], abs(diff[1]))
+					self.place_armies(diff[0], abs(diff[1]))
 					armies_to_place -= abs(diff[1])
 				else:
 					break
 
 		# add the rest to the lowest
 		if armies_to_place > 0:
-			place_armies(army_differences[0][0], armies_to_place);
+			self.place_armies(army_differences[0][0], armies_to_place);
 
 		# attack
 		for t_id in self.to_be_captured[c_id]:
-			attack_territory[t_id]
+			self.attack_territory(t_id)
 
 	def attack_territory(self, target):
 		if (len(self.player_adj_territories[target]) == 0): return
@@ -68,7 +68,8 @@ class Game(object):
 					max_army = self.own_territories[t_id]['num_armies']
 					attacker = t_id
 
-			res = self.api.attack(attacker, target, self.own_territories[attacker]['num_armies']-2)
+			res = self.api.attack(attacker, target, self.own_territories[attacker]['num_armies']-1)
+			print res
 			if (res['defender_territory_captured'] or (res['attacker_territory_armies_left'] == 1)):
 				return
 
