@@ -38,11 +38,28 @@ class Game(object):
 		for t_id in self.to_be_captured[c_id]:
 			player_adj_territories[t_id] = get_player_adj_armies(t_id)
 
-		# Fortify armies with the with the following algorithm:
-		# 1. Pick a territory to be captured
-		# 2. Out of the 
+		# Fortify the territories
+		army_differences = {}
 		for t_id in self.to_be_captured[c_id]:
+			army_differences[t_id] = (t_id, self.adjacent_armies[t_id] - self.enemy_territories[t_id]['num_armies'])
+		
+		army_differences = sorted(army_differences, key=itemgetter(1))
+		# equalize so that the differences are positive
+		for diff in army_differences:
+			if diff[1] < 0:
+				if abs(diff[1]) <= armies_to_place:
+					place_armies(diff[0], abs(diff[1]))
+					armies_to_place -= abs(diff[1])
+				else:
+					break
 
+		# add the rest to the lowest
+		if armies_to_place > 0:
+			place_armies(army_differences[0][0], armies_to_place);
+
+		# attack
+		for t_id in self.to_be_captured[c_id]:
+			attack_territory[t_id]
 
 	def attack_territory(self, t_id):
 		pass
@@ -61,10 +78,10 @@ class Game(object):
 		largest_territory_id = 0
 		largest_territory = 0
 
-		for t_id in player_adj_territories
-			if self.own_territories[t_id]['num_armies'] > largest_territory:
-				largest_territory = self.own_territories[t_id]['num_armies']
-				largest_territory_id = t_id
+		for adj_t_id in player_adj_territories:
+			if self.own_territories[adj_t_id]['num_armies'] > largest_territory:
+				largest_territory = self.own_territories[adj_t_id]['num_armies']
+				largest_territory_id = adj_t_id
 
 		self.api.place_armies(largest_territory_id, num_armies)
 
