@@ -12,21 +12,20 @@ class Game(object):
 		print("Joined game: " + str(self.api.game_id))
 		map_res = self.api.get_map_layout()
 		(self.territories, self.continents) = self.parse_map(map_res)
-		self.updateGameState()
+		# self.updateGameState()
 		# print self.territories
 		# print self.continents
 
+	def list_to_dict(self, lst, id_key):
+		d = {}
+		for item in lst:
+			id = item[id_key]
+			d[id] = item
+		return d
+
 	def parse_map(self, res):
-		t = {}
-		for territory in res['territories']:
-			t_id = territory['territory']
-			t[t_id] = territory
-
-		c = {}
-		for continent in res['continents']:
-			c_id = continent['continent']
-			c[c_id] = continent
-
+		t = self.list_to_dict(res['territories'], 'territory')
+		c = self.list_to_dict(res['continents'], 'continent')
 		return (t, c)
 
 	def target_continent(self, c_id):
@@ -36,21 +35,31 @@ class Game(object):
 		pass
 
 	def updateGameState(self):
-		self.own_territories = self.api.get_player_status()
-		self.enemy_territories = self.api.get_enemy_status()
+		self.player_state = self.api.get_player_status()
+		self.own_territories = self.list_to_dict(self.player_state['territories'], 'territory')
+		# print(self.player_state)
+
+		self.enemy_state = self.api.get_enemy_status()
+		self.enemy_territories = self.list_to_dict(self.enemy_state['territories'], 'territory')
+		# print(self.enemy_state)
+
 		self.to_be_captured = {}
 		self.number_of_armies = {}
 		self.enemy_armies = {}
 
-		for c in self.continents:
+		for key in self.continents:
+			c = self.continents[key]
+			c_id = c['continent']
+			self.to_be_captured[c_id] = []
 			count = 0
 			army_count = 0
-			c_id = c['continent']
-			for t in self.own_territories['territories']:
+			enemy_count = 0
+			for key in self.own_territories:
+				t = self.own_territories[key]
 				if t['territory'] in c['territories']:
-					count += 1
 					army_count += t['num_armies']
-			for t in self.enemy_territories['territories']:
+			for key in self.enemy_territories:
+				t = self.enemy_territories[key]
 				if t['territory'] in c['territories']:
 					enemy_count += t['num_armies']
 					self.to_be_captured[c_id].append(t['territory'])
@@ -58,8 +67,8 @@ class Game(object):
 			self.number_of_armies[c_id] = army_count
 			self.enemy_armies[c_id] = enemy_count
 
-		# print self.own_territories
-		# print self.enemy_territories
+		# print self.player_state
+		# print self.enemy_state
 
 	def attack(self):
 		pass
@@ -69,4 +78,6 @@ class Game(object):
 
 	def play(self):
 		self.updateGameState()
+		self.attack()
+	
 
