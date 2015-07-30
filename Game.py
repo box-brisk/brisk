@@ -99,12 +99,12 @@ class Game(object):
 					self.player_adj_territories[t['territory']].append(adjacent_t)
 
 	def transfer_to_smallest_adjacent_territory(self, src_t_id, num_armies_to_transfer):
-		smallest_territory = sys.max_int;
+		smallest_territory = sys.maxint;
 		smallest_territory_id = 0;
 
 		for adj_t_id in self.territories[src_t_id]['adjacent_territories']:
-			 if self.territories[adj_t_id]['num_armies'] < smallest_territory:
-			 	smallest_territory = self.territories[adj_t_id]['num_armies']
+			 if self.own_territories[adj_t_id]['num_armies'] < smallest_territory:
+			 	smallest_territory = self.own_territories[adj_t_id]['num_armies']
 			 	smallest_territory_id = adj_t_id
 
 		self.api.transfer_armies(src_t_id, smallest_territory_id, num_armies_to_transfer)
@@ -175,8 +175,9 @@ class Game(object):
 					can_transfer = False
 			if can_transfer:
 				# transfer all but 1 to the lowest
-				num_armies_to_transfer = self.territories[t_id]['num_armies'] - 1
-				transfer_to_smallest_adjacent_territory(t_id, num_armies_to_transfer)
+				num_armies_to_transfer = self.own_territories[t_id]['num_armies'] - 1
+				self.transfer_to_smallest_adjacent_territory(t_id, num_armies_to_transfer)
+				return
 
 	def play(self):
 		self.updateGameState()
