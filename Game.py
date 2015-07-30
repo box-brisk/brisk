@@ -32,7 +32,7 @@ class Game(object):
 
 	def attack_continent(self, c_id):
 		player_adj_territories = {}
-		armies_to_place = self.player_state['reserve_armies']
+		armies_to_place = self.player_state['num_reserves']
 
 		# Get our player territories adjacent to the ones we want to capture
 		for t_id in self.to_be_captured[c_id]:
@@ -63,18 +63,10 @@ class Game(object):
 
 	def attack_territory(self, t_id):
 		pass
-
-	# Get the player's territories adjacent to the enemy territory t_id
-	def get_player_adj_armies(self, t_id):
-		player_adj_territories = []
-		for adj_t_id in self.territories[t_id]['adjacent_territories']:
-			if adj_t_id in self.own_territories:
-				player_adj_territories.append[adj_t_id]
-
-		return player_adj_territories
+		
 
 	def place_armies(self, t_id, num_armies):
-		player_adj_armies = get_player_adj_armies(t_id)
+		player_adj_territories = self.player_adj_territories[t_id]
 		largest_territory_id = 0
 		largest_territory = 0
 
@@ -86,15 +78,19 @@ class Game(object):
 		self.api.place_armies(largest_territory_id, num_armies)
 
 	def helper_calc_army_around_enemy_territories(self):
-		self.adjacent_armies = {}
+		self.player_adj_armies = {}
+		self.player_adj_territories = {}
 		for t_id in self.enemy_territories:
 			t = self.territories[t_id]
-			self.adjacent_armies[t['territory']] = 0
+			self.player_adj_armies[t['territory']] = 0
+			self.player_adj_territories[t['territory']] = []
 			for adjacent_t in t['adjacent_territories']:
 				if adjacent_t in self.own_territories:
-					self.adjacent_armies[t['territory']] += self.own_territories[adjacent_t]['num_armies']
+					self.player_adj_armies[t['territory']] += self.own_territories[adjacent_t]['num_armies']
+					self.player_adj_territories[t['territory']].append(adjacent_t)
 
-		print self.adjacent_armies
+		print self.player_adj_territories
+
 
 	def updateGameState(self):
 		self.player_state = self.api.get_player_status()
@@ -137,7 +133,7 @@ class Game(object):
 		enemy_armies = 99999
 		for c in self.continents.itervalues():
 			c_id = c['continent']
-			if len(self.to_be_captured[c_id]) < EASY_CONTINENT_LIMIT:
+			if len(self.to_be_captured[c_id]) < Game.EASY_CONTINENT_LIMIT:
 				count = 0
 				for t_id in self.to_be_captured[c_id]:
 					count += self.enemy_territories[t_id]['num_armies']
@@ -149,7 +145,7 @@ class Game(object):
 			self.attack_territory(to_attack)
 		else:
 			to_attack = random.choice(self.enemy_territories.keys())
-			self.place_armies(to_attack, self.player_state['reserved_armies'])
+			self.place_armies(to_attack, self.player_state['num_reserves'])
 			self.attack_territory(to_attack)
 
 	def defend(self):
