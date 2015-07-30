@@ -1,0 +1,15 @@
+import Brisk, parser, Game, time
+
+def main():
+	game = Game.Game()
+	while (True):
+		res = game.api.get_player_status(True)
+		if (res['eliminated']):
+			return
+		if (res['current_turn']):
+			game.play()
+		time.sleep(1)
+
+
+if __name__ == '__main__':
+	main()
