@@ -30,12 +30,43 @@ class Game(object):
 		c = self.list_to_dict(res['continents'], 'continent')
 		return (t, c)
 
-	def target_continent(self, c_id):
+	def attack_continent(self, c_id):
+		player_adj_territories = {}
+		armies_to_place = self.player_state['reserve_armies']
+
+		# Get our player territories adjacent to the ones we want to capture
+		for t_id in self.to_be_captured[c_id]:
+			player_adj_territories[t_id] = get_player_adj_armies(t_id)
+
+		# Fortify armies with the with the following algorithm:
+		# 1. Pick a territory to be captured
+		# 2. Out of the 
+		for t_id in self.to_be_captured[c_id]:
+
+
+	def attack_territory(self, t_id):
 		pass
 
-	def target_territory(self, t_id):
-		pass
+	# Get the player's territories adjacent to the enemy territory t_id
+	def get_player_adj_armies(self, t_id):
+		player_adj_territories = []
+		for adj_t_id in self.territories[t_id]['adjacent_territories']:
+			if adj_t_id in self.own_territories:
+				player_adj_territories.append[adj_t_id]
 
+		return player_adj_territories
+
+	def place_armies(self, t_id, num_armies):
+		player_adj_armies = get_player_adj_armies(t_id)
+		largest_territory_id = 0
+		largest_territory = 0
+
+		for t_id in player_adj_territories
+			if self.own_territories[t_id]['num_armies'] > largest_territory:
+				largest_territory = self.own_territories[t_id]['num_armies']
+				largest_territory_id = t_id
+
+		self.api.place_armies(largest_territory_id, num_armies)
 
 	def helper_calc_army_around_enemy_territories(self):
 		self.adjacent_armies = {}
