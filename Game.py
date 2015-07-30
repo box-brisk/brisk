@@ -34,12 +34,13 @@ class Game(object):
 		armies_to_place = self.player_state['num_reserves']
 
 		# Fortify the territories
-		army_differences = {}
+		army_differences = []
 		for t_id in self.to_be_captured[c_id]:
-			army_differences[t_id] = (t_id, self.player_adj_armies[t_id] - self.enemy_territories[t_id]['num_armies'])
+			army_differences.append((t_id, self.player_adj_armies[t_id] - self.enemy_territories[t_id]['num_armies']))
 		
-		def get_key(item): return item[1]
-		army_differences = sorted(army_differences, key=get_key)
+		print army_differences
+
+		army_differences = sorted(army_differences, key=lambda tup: tup[1])
 		# equalize so that the differences are positive
 		for diff in army_differences:
 			if diff[1] < 0:
