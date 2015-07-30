@@ -32,14 +32,15 @@ class Game(object):
 	def target_continent(self, c_id):
 		pass
 
+	def target_territory(self, t_id):
+		pass
+
 	def updateGameState(self):
 		self.own_territories = self.api.get_player_status()
 		self.enemy_territories = self.api.get_enemy_status()
 		self.to_be_captured = {}
 		self.number_of_armies = {}
 		self.enemy_armies = {}
-
-
 
 		for c in self.continents:
 			count = 0
@@ -57,15 +58,15 @@ class Game(object):
 			self.number_of_armies[c_id] = army_count
 			self.enemy_armies[c_id] = enemy_count
 
-			if self.to_be_captured[c_id] <= 2:
-
-
-
-
-
 		# print self.own_territories
 		# print self.enemy_territories
 
+	def attack(self):
+		pass
+
+	def defend(self):
+		pass
+
 	def play(self):
 		self.updateGameState()
-		reserved = self.own_territories['num_reserves']
+

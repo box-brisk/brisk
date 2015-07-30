@@ -4,7 +4,7 @@ def main():
 	game = Game.Game()
 	while (True):
 		res = game.api.get_player_status(True)
-		if (res['eliminated']):
+		if (res['eliminated'] or res['winner']):
 			return
 		if (res['current_turn']):
 			game.play()
