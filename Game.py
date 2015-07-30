@@ -3,7 +3,7 @@
 #{"territory": 2,"num_armies": 3}, {"territory": 4, "num_armies": 3}
 
 import Brisk
-import time, random 
+import time, random, sys
 
 class Game(object):
 
@@ -91,6 +91,17 @@ class Game(object):
 
 		print self.player_adj_territories
 
+	def transfer_to_smallest_adjacent_territory(self, src_t_id, num_armies_to_transfer):
+		smallest_territory = sys.max_int;
+		smallest_territory_id = 0;
+
+		for adj_t_id in self.territories[src_t_id]['adjacent_territories']:
+			 if self.territories[adj_t_id]['num_armies'] < smallest_territory:
+			 	smallest_territory = self.territories[adj_t_id]['num_armies']
+			 	smallest_territory_id = adj_t_id
+
+		self.api.transfer_armies(src_t_id, smallest_territory_id, num_armies_to_transfer)
+
 
 	def updateGameState(self):
 		self.player_state = self.api.get_player_status()
@@ -127,7 +138,6 @@ class Game(object):
 		# print self.player_state
 		# print self.enemy_state
 
-
 	def attack(self):
 		to_attack = None
 		enemy_armies = 99999
@@ -149,7 +159,18 @@ class Game(object):
 			self.attack_territory(to_attack)
 
 	def defend(self):
-		pass
+		territories_that_can_transfer = []
+		# Find our territories that can transfer
+		for t_id in self.own_territories:
+			t = self.territories[t_id]
+			can_transfer = True
+			for adj_t_id in t['adjacent_territories']:
+				if adj_t_id in self.enemy_territories:
+					can_transfer = False
+			if can_transfer:
+				# transfer all but 1 to the lowest
+				num_armies_to_transfer = self.territories[t_id]['num_armies'] - 1
+				transfer_to_smallest_adjacent_territory(t_id, num_armies_to_transfer)
 
 	def play(self):
 		self.updateGameState()
