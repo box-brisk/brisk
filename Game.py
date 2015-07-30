@@ -175,8 +175,8 @@ class Game(object):
 					can_transfer = False
 			if can_transfer:
 				# transfer all but 1 to the lowest
-				num_armies_to_transfer = self.territories[t_id]['num_armies'] - 1
-				transfer_to_smallest_adjacent_territory(t_id, num_armies_to_transfer)
+				num_armies_to_transfer = self.own_territories[t_id]['num_armies'] - 1
+				self.transfer_to_smallest_adjacent_territory(t_id, num_armies_to_transfer)
 
 	def play(self):
 		self.updateGameState()
