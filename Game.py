@@ -53,8 +53,8 @@ class Game(object):
 			for t in self.enemy_territories['territories']:
 				if t['territory'] in c['territories']:
 					enemy_count += t['num_armies']
+					self.to_be_captured[c_id].append(t['territory'])
 
-			self.to_be_captured[c_id] = len(c['territories']) - count
 			self.number_of_armies[c_id] = army_count
 			self.enemy_armies[c_id] = enemy_count
 
