@@ -30,10 +30,10 @@ class Game(object):
 		c = self.list_to_dict(res['continents'], 'continent')
 		return (t, c)
 
-	def target_continent(self, c_id):
+	def attack_continent(self, c_id):
 		pass
 
-	def target_territory(self, t_id):
+	def attack_territory(self, t_id):
 		pass
 
 
@@ -83,23 +83,34 @@ class Game(object):
 		# print self.player_state
 		# print self.enemy_state
 
-	def attack(self):
-		# attacked = False
-		# for c in self.continents.itervalues():
-		# 	c_id = c['continent']
-		# 	if len(self.to_be_captured[c_id]) < EASY_CONTINENT_LIMIT:
-		# 		self.target_continent(c_id)
-		# 		attacked = True
-		# 		break
-		# if (not attacked):
-		pass
 
+	def attack(self):
+		to_attack = None
+		enemy_armies = 99999
+		for c in self.continents.itervalues():
+			c_id = c['continent']
+			if len(self.to_be_captured[c_id]) < EASY_CONTINENT_LIMIT:
+				count = 0
+				for t_id in self.to_be_captured[c_id]:
+					count += self.enemy_territories[t_id]['num_armies']
+				if (count < enemy_armies):
+					to_attack = c_id
+					enemy_armies = count
+
+		if (to_attack):
+			self.attack_territory(to_attack)
+		else:
+			to_attack = random.choice(self.enemy_territories.keys())
+			self.place_armies(to_attack, self.player_state['reserved_armies'])
+			self.attack_territory(to_attack)
 
 	def defend(self):
 		pass
 
 	def play(self):
 		self.updateGameState()
-		# self.attack()
+		self.attack()
+		self.defend()
+		self.api.end_turn()
 	
 
