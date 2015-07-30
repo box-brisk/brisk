@@ -149,7 +149,8 @@ class Game(object):
 		enemy_armies = 99999
 		for c in self.continents.itervalues():
 			c_id = c['continent']
-			if len(self.to_be_captured[c_id]) < Game.EASY_CONTINENT_LIMIT:
+			if ((len(self.to_be_captured[c_id]) < Game.EASY_CONTINENT_LIMIT) 
+						and (len(self.to_be_captured[c_id]) > 0)):
 				count = 0
 				for t_id in self.to_be_captured[c_id]:
 					count += self.enemy_territories[t_id]['num_armies']
@@ -177,12 +178,15 @@ class Game(object):
 				# transfer all but 1 to the lowest
 				num_armies_to_transfer = self.own_territories[t_id]['num_armies'] - 1
 				self.transfer_to_smallest_adjacent_territory(t_id, num_armies_to_transfer)
+				self.ended = True
 				return
 
 	def play(self):
+		self.ended = False
 		self.updateGameState()
 		self.attack()
 		self.defend()
-		self.api.end_turn()
+		if (not self.ended):
+			self.api.end_turn()
 	
 
