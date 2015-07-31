@@ -52,8 +52,11 @@ class Game(object):
 				return prob_table[9][scaled_your_army]
 		else:
 			return prob_table[their_army][your_army]
-			
+
 	def lost_cost(self, territory):
+		# lost cost = 
+		# a * (1 - prob_defend(your army, their army))
+		# a = 1.0/3 + (if continent is occupied, plus the continent cost) + coefficient * (percentage of territories occupied in the current continent)
 		pass
 
 	def attack_continent(self, c_id):
