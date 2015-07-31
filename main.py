@@ -1,4 +1,4 @@
-import Brisk, parser, Game, time
+import Brisk, parser, Game, time, sys
 
 def main():
 	# try:
@@ -14,7 +14,7 @@ def main():
 	# 	raise e
 	# 	pass
 
-	game = Game.Game()
+	game = Game.Game(sys.argv[1], sys.argv[2])
 	while (True):
 		res = game.api.get_player_status(True)
 		if (res['eliminated'] or res['winner']):

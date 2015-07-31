@@ -9,8 +9,8 @@ class Game(object):
 
 	EASY_CONTINENT_LIMIT = 2
 
-	def __init__(self):
-		self.api = Brisk.Brisk()
+	def __init__(self, game_id, game_type):
+		self.api = Brisk.Brisk(game_id, game_type)
 		print("Joined game: " + str(self.api.game_id))
 		map_res = self.api.get_map_layout()
 		(self.territories, self.continents) = self.parse_map(map_res)

@@ -6,14 +6,22 @@ class Brisk(object):
     TEAM_NAME = 'bravo'
     API_TOKEN = 'ae4555f42028c91105194beb267ac48d122dddcd'
 
-    def __init__(self, game_id=False, bot_id=1):
-        res = self.join_game(game_id, bot_id)
+    def __init__(self, game_id, game_type):
+        res = self.join_game(game_id, game_type)
         self.game_id = res['game']
         self.player_id = res['player']
         self.token = res['token']
 
-    def join_game(self, game_id, bot_id):
-        data = { 'join': True, 'team_name': self.TEAM_NAME }
+    def join_game(self, game_id, game_type):
+        data = {}
+        if game_type == 'bot':
+            data = { 'join': True, 'team_name': Brisk.TEAM_NAME }
+        elif game_type == 'start':
+            print 'Start game'
+            data = { 'join': True, 'team_name': Brisk.TEAM_NAME, 'token': Brisk.API_TOKEN, 'no_bot': True }
+        else:
+            print 'PvP game'
+            data = { 'join': True, 'team_name': Brisk.TEAM_NAME, 'token': Brisk.API_TOKEN, 'no_bot': True, 'game': game_id }
         res = self.post(self.url_root(), data)
         return res
 
