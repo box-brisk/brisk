@@ -59,6 +59,20 @@ class Game(object):
 		# a = 1.0/3 + (if continent is occupied, plus the continent cost) + coefficient * (percentage of territories occupied in the current continent)
 		pass
 
+	def print_attack(self, res):
+		print '---------------------------------'
+		print '          ATTACK RESULTS         '
+		print '---------------------------------'
+		print 'Player territory ' + str(res['attacker_territory']) + ' attacks Enemy territory ' + str(res['defender_territory'])
+		print 'Player attacks enemy with rolls of ' + str(res['attacker_dice'])
+		print 'Enemey defends with rolls of ' + str(res['defender_dice'])
+		print 'Player lost ' + str(res['attacker_losses'])
+		print 'Enemy lost ' + str(res['defender_losses'])
+		print 'Player forces remaining: ' + str(res['attacker_territory_armies_left'])
+		print 'Enemy forces remaining: ' + str(res['defender_territory_armies_left'])
+		print '\n'
+
+
 	def attack_continent(self, c_id):
 		print 'Attacking continent\n\n'
 		armies_to_place = self.player_state['num_reserves']
@@ -93,9 +107,10 @@ class Game(object):
 			max_army = 0
 			attacker = None
 
-			print 'target is enemy :' + str(target in self.enemy_territories)
+			# print 'target is enemy :' + str(target in self.enemy_territories)
 
-			if len(self.player_adj_territories[target]) == 0: return
+			if len(self.player_adj_territories[target]) == 0:
+				return
 			for t_id in self.player_adj_territories[target]:
 				if (self.own_territories[t_id]['num_armies'] > max_army):
 					max_army = self.own_territories[t_id]['num_armies']
@@ -103,9 +118,10 @@ class Game(object):
 
 			if self.own_territories[attacker]['num_armies'] > 3:
 				res = self.api.attack(attacker, target, 3)
+				self.print_attack(res)
 				self.updateGameState()
 			else:
-				print 'CANNOT ATTACK \n\n'
+				# print 'CANNOT ATTACK \n\n'
 				return
 
 			# try:
@@ -163,8 +179,10 @@ class Game(object):
 				largest_territory_id = adj_t_id
 
 		print self.player_state['num_reserves'], num_armies
-		print 'Adding ' + str(num_armies)
-		print 'Adding to: ' + str(self.own_territories[largest_territory_id])
+
+		print '================================='
+		print 'Placing ' + str(num_armies) + ' on territory ' + str(largest_territory_id)
+		print '================================='
 		self.api.place_armies(largest_territory_id, num_armies)
 		self.updateGameState()
 		# self.own_territories[largest_territory_id]['num_armies'] += num_armies
@@ -273,12 +291,15 @@ class Game(object):
 				return
 
 	def play(self):
-		print 'TURN START \n\n'
-		print 'turn: ' + str(self.api.get_game_state()['num_turns_taken'])
+		print '---------------------------------'
+		print '- - - - - - - - - - - - - - - - -'
+		print '           TURN ' + str(self.api.get_game_state()['num_turns_taken'])
+		print '- - - - - - - - - - - - - - - - -'
+		print '---------------------------------'
 		self.updateGameState()
 		self.attack()
 		self.defend()
-		print 'END TURN\n\n'
+		print 'ENDING TURN\n'
 		try:
 			self.api.end_turn()
 		except:
