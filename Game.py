@@ -63,10 +63,10 @@ class Game(object):
 		]
 		if (your_army >= 10 or their_army >= 10):
 			if (your_army >= their_army):
-				scaled_their_army = int(round(their_army * 1.0 / your_army * 10))
+				scaled_their_army = int(round(their_army * 1.0 / your_army * 9))
 				return prob_table[scaled_their_army][9]
 			else:
-				scaled_your_army = int(round(your_army * 1.0 / their_army * 10))
+				scaled_your_army = int(round(your_army * 1.0 / their_army * 9))
 				return prob_table[9][scaled_your_army]
 		else:
 			return prob_table[their_army][your_army]
@@ -99,8 +99,10 @@ class Game(object):
 
 		def calc(enemy_t):
 			c_id = self.territories[enemy_t]['continent']
-			a = 1-min(4, len(self.to_be_captured[c_id])-1)/((4*1.0)**2)
-			b = 1 if (len(self.to_be_captured[c_id]) == len(self.continents[c_id]['territories'])) else 0
+			a = 1-min(2, len(self.to_be_captured[c_id])-1)/(2*1.0)
+			b = 1.2 if (self.check_harass(c_id)) else 0
+			if a > 0: a = a/2.0 + 0.5
+			if a == 1: a = 2
 			territory_surrounding_enemies = 0
 			for adj_t in self.territories[enemy_t]['adjacent_territories']:
 				if adj_t in self.enemy_territories:
@@ -117,7 +119,11 @@ class Game(object):
 			else:
 				threat /= border_size
 
-			return (a+b)*self.continents[c_id]['continent_bonus']/math.sqrt(threat)*3 - 0.5*self.enemy_territories[enemy_t]['num_armies'] - math.sqrt(territory_surrounding_enemies)
+			print self.continents[c_id]['continent_name']
+			print a
+			print a*1.5/threat, b, self.continents[c_id]['continent_bonus'], (a*1.5/math.sqrt(threat)+b)*self.continents[c_id]['continent_bonus']*100
+			print 0.75*self.enemy_territories[enemy_t]['num_armies'], 0.5*territory_surrounding_enemies
+			return (a*1.5/threat+b)*self.continents[c_id]['continent_bonus']*100 - 0.75*self.enemy_territories[enemy_t]['num_armies'] - 0.5*territory_surrounding_enemies
 
 		def attack_heuristics(enemy_t):
 			value = calc(enemy_t)
@@ -203,7 +209,11 @@ class Game(object):
 					attacker = t_id
 
 			enemy_army = self.enemy_territories[target]['num_armies']
-			if (self.prob_defend(max_army, enemy_army) < 0.7): return
+
+			c_id = self.territories[target]['continent']
+			is_harass = self.check_harass(c_id)
+			if (not is_harass):	
+				if (self.prob_defend(max_army, enemy_army) < 0.7): return
 
 			if max_army > 3:
 				res = self.api.attack(attacker, target, 3)
@@ -347,53 +357,60 @@ class Game(object):
 
 		self.updateAdjacentData()
 
-		# print self.player_state
-		# print self.enemy_state
+	def check_harass(self, c_id):
+		return len(self.to_be_captured[c_id]) == len(self.continents[c_id]['territories'])
 
 	def attack(self):
 		to_attack = None
-		enemy_armies = sys.maxint
-		for c in self.continents.itervalues():
-			c_id = c['continent']
-			if ((len(self.to_be_captured[c_id]) < Game.EASY_CONTINENT_LIMIT) 
-						and (len(self.to_be_captured[c_id]) > 0)):
-				count = 0
-				for t_id in self.to_be_captured[c_id]:
-					count += self.enemy_territories[t_id]['num_armies']
-				if (count < enemy_armies):
-					to_attack = c_id
-					enemy_armies = count
-		if (to_attack):
-			self.attack_continent(to_attack)
-		else:
-			if self.player_state['num_reserves'] == 0:
-				print self.api.get_player_status()
-				sys.exit()
+		# enemy_armies = sys.maxint
+		# for c in self.continents.itervalues():
+		# 	c_id = c['continent']
+		# 	if ((len(self.to_be_captured[c_id]) < Game.EASY_CONTINENT_LIMIT) 
+		# 				and (len(self.to_be_captured[c_id]) > 0)):
+		# 		count = 0
+		# 		for t_id in self.to_be_captured[c_id]:
+		# 			count += self.enemy_territories[t_id]['num_armies']
+		# 		if (count < enemy_armies):
+		# 			to_attack = c_id
+		# 			enemy_armies = count
+		# if (to_attack):
+		# 	self.attack_continent(to_attack)
+		# else:
+		if self.player_state['num_reserves'] == 0:
+			print self.api.get_player_status()
+			sys.exit()
 
-			# to_attack = random.choice(self.enemy_territories.keys())
-			all_targets = []
-			for c_id in self.adj_enemy_territories:
-				all_targets.extend(self.adj_enemy_territories[c_id])
-			all_targets = self.order_attack_targets(list(set(all_targets)))
+		# to_attack = random.choice(self.enemy_territories.keys())
+		all_targets = []
+		for c_id in self.adj_enemy_territories:
+			all_targets.extend(self.adj_enemy_territories[c_id])
+		all_targets = self.order_attack_targets(list(set(all_targets)))
 
-			index = 0
-			reserves = self.player_state['num_reserves']
-			outnumber = min(reserves / 3 * 2 + 2, 4)
-			attack_list = []
-			while ((reserves > 0) and index < len(all_targets)):
-				to_attack = all_targets[index]
-				(territory_to_put, current_army) = self.place_armies_helper(to_attack)
-				to_place = max(0, min(reserves, self.enemy_territories[to_attack]['num_armies'] + outnumber - current_army))
-				reserves = reserves - to_place
-				print reserves, to_place
-				self.place_armies(to_attack, to_place)
-				attack_list.append(to_attack)
-				index += 1
-			if (reserves > 0):
-				self.place_armies(all_targets[0], reserves)
-			map(self.attack_territory, attack_list)
+		index = 0
+		reserves = self.player_state['num_reserves']
+		outnumber = min(reserves / 3 * 2 + 2, 4)
+		attack_list = []
+		while ((reserves > 0) and index < len(all_targets)):
+			to_attack = all_targets[index]
+			(territory_to_put, current_army) = self.place_armies_helper(to_attack)
+			to_place = max(0, min(reserves, self.enemy_territories[to_attack]['num_armies'] + outnumber - current_army))
+
+			if (self.check_harass(self.territories[to_attack]['continent'])):
+				to_place /= 2
+
+			reserves = reserves - to_place
+			print reserves, to_place
+			self.place_armies(to_attack, to_place)
+			attack_list.append(to_attack)
+			index += 1
+		if (reserves > 0):
+			self.place_armies(all_targets[0], reserves)
+		map(self.attack_territory, attack_list)
 
 	def defend(self):
+		print "======================"
+		print "| Making defend moves"
+		print "======================"
 		self.updateGameState()
 		non_border_territory_with_most_army = None
 		most_army = 0
