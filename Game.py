@@ -89,47 +89,68 @@ class Game(object):
 			self.attack_territory(t_id)
 
 	def attack_territory(self, target):
-		if (len(self.player_adj_territories[target]) == 0): 
-			print 'target: ' + str(target)
-			print 'adj-territories: ' + str(self.player_adj_territories)
-			return
 		while True:
 			max_army = 0
 			attacker = None
+
+			print 'target is enemy :' + str(target in self.enemy_territories)
+
+			if len(self.player_adj_territories[target]) == 0: return
 			for t_id in self.player_adj_territories[target]:
 				if (self.own_territories[t_id]['num_armies'] > max_army):
 					max_army = self.own_territories[t_id]['num_armies']
 					attacker = t_id
-			armies_to_attack_with = 0
-			if self.own_territories[t_id]['num_armies'] > 3:
-				armies_to_attack_with = 3
-			elif self.own_territories[t_id]['num_armies'] > 1:
-				armies_to_attack_with = self.own_territories[t_id]['num_armies'] - 1
 
-			try:
-				res = self.api.attack(attacker, target, armies_to_attack_with)
-				print 'our territory attacking: ' + str(self.own_territories[attacker])
-				print 'their territory defending: ' + str(self.enemy_territories[target])
-				self.own_territories[attacker]['num_armies'] = res['attacker_territory_armies_left']
-				self.enemy_territories[target]['num_armies'] = res['defender_territory_armies_left']
-				print 'ATTACK ON ' + str(target) + ' SUCCESS: ' + str(res)
-			except:
-				print 'gameState: ' + str(self.api.get_game_state())
-				print 'attacker:' + str(attacker)
-				print 'target: ' + str(target)
-				print 'armies attacking: ' + str(self.own_territories[attacker]['num_armies']-1)
-				print 'target2' + str(self.enemy_territories[target])	
-				sys.exit()
-
-			if (res['defender_territory_captured'] or (res['attacker_territory_armies_left'] == 1)):
+			if self.own_territories[attacker]['num_armies'] > 3:
+				res = self.api.attack(attacker, target, 3)
+				self.updateGameState()
+			else:
 				print 'CANNOT ATTACK \n\n'
 				return
+
+			# try:
+			# 	res = self.api.attack(attacker, target, armies_to_attack_with)
+			# 	print 'our territory attacking: ' + str(self.own_territories[attacker])
+			# 	print 'their territory defending: ' + str(self.enemy_territories[target])
+			# 	self.own_territories[attacker]['num_armies'] = res['attacker_territory_armies_left']
+			# 	self.enemy_territories[target]['num_armies'] = res['defender_territory_armies_left']
+			# 	print 'ATTACK ON ' + str(target) + ' SUCCESS: ' + str(res)
+			# except:
+			# 	print 'gameState: ' + str(self.api.get_game_state())
+			# 	print 'attacker:' + str(attacker)
+			# 	print 'target: ' + str(target)
+			# 	print 'armies attacking: ' + str(self.own_territories[attacker]['num_armies']-1)
+			# 	print 'target2' + str(self.enemy_territories[target])	
+			# 	sys.exit()
+
+			if (res['attacker_territory_armies_left'] == 3):
+				print 'CANNOT ATTACK \n\n'
+				return
+
+			if (res['defender_territory_captured']):
+				self.updateGameState()
+				if (self.own_territories[attacker]['num_armies'] > 2):
+					try:
+						self.api.transfer_armies(attacker, target, self.own_territories[attacker]['num_armies']-2)
+						self.updateGameState()
+					except:
+						print('transfer ' + str(self.own_territories[attacker]['num_armies']-2) + ' armies from ' + str(attacker) + ' to ' + str(target))
+						print self.api.get_game_state()
+				new_target = None
+				for adj_t in self.territories[target]['adjacent_territories']:
+					if adj_t in self.enemy_territories:
+						new_target = adj_t
+						break
+				if (new_target is None): return
+				target = new_target
+
 
 	def place_armies(self, t_id, num_armies):
 		if num_armies == 0:
 			return
 
 		player_adj_territories = self.player_adj_territories[t_id]
+		if len(player_adj_territories) == 0: return
 		largest_territory_id = 0
 		largest_territory = 0
 
@@ -145,9 +166,10 @@ class Game(object):
 		print 'Adding ' + str(num_armies)
 		print 'Adding to: ' + str(self.own_territories[largest_territory_id])
 		self.api.place_armies(largest_territory_id, num_armies)
-		self.own_territories[largest_territory_id]['num_armies'] += num_armies
+		self.updateGameState()
+		# self.own_territories[largest_territory_id]['num_armies'] += num_armies
 
-	def helper_calc_army_around_enemy_territories(self):
+	def updateAdjacentData(self):
 		self.player_adj_armies = {}
 		self.player_adj_territories = {}
 		for t_id in self.enemy_territories:
@@ -172,11 +194,12 @@ class Game(object):
 			 	smallest_territory_id = adj_t_id
 
 		self.api.transfer_armies(src_t_id, smallest_territory_id, num_armies_to_transfer)
+		self.updateGameState()
 
 	def updateGameState(self):
 		self.player_state = self.api.get_player_status()
 		self.own_territories = self.list_to_dict(self.player_state['territories'], 'territory')
-		print(self.player_state)
+		# print(self.player_state)
 
 		self.enemy_state = self.api.get_enemy_status()
 		self.enemy_territories = self.list_to_dict(self.enemy_state['territories'], 'territory')
@@ -203,7 +226,7 @@ class Game(object):
 			self.number_of_armies[c_id] = army_count
 			self.enemy_armies[c_id] = enemy_count
 
-		self.helper_calc_army_around_enemy_territories()
+		self.updateAdjacentData()
 
 		# print self.player_state
 		# print self.enemy_state
