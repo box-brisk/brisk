@@ -69,18 +69,18 @@ class Game(object):
 		for diff in army_differences:
 			if diff[1] < 0:
 				if abs(diff[1]) <= armies_to_place:
-					place_armies(diff[0], abs(diff[1]))
+					self.place_armies(diff[0], abs(diff[1]))
 					armies_to_place -= abs(diff[1])
 				else:
 					break
 
 		# add the rest to the lowest
 		if armies_to_place > 0:
-			place_armies(army_differences[0][0], armies_to_place);
+			self.place_armies(army_differences[0][0], armies_to_place);
 
 		# attack
 		for t_id in self.to_be_captured[c_id]:
-			attack_territory[t_id]
+			self.attack_territory(t_id)
 
 	def attack_territory(self, target):
 		if (len(self.player_adj_territories[target]) == 0): return
@@ -92,7 +92,8 @@ class Game(object):
 					max_army = self.own_territories[t_id]['num_armies']
 					attacker = t_id
 
-			res = self.api.attack(attacker, target, self.own_territories[attacker]['num_armies']-2)
+			res = self.api.attack(attacker, target, self.own_territories[attacker]['num_armies']-1)
+			print res
 			if (res['defender_territory_captured'] or (res['attacker_territory_armies_left'] == 1)):
 				return
 
@@ -122,12 +123,12 @@ class Game(object):
 					self.player_adj_territories[t['territory']].append(adjacent_t)
 
 	def transfer_to_smallest_adjacent_territory(self, src_t_id, num_armies_to_transfer):
-		smallest_territory = sys.max_int;
+		smallest_territory = sys.maxint;
 		smallest_territory_id = 0;
 
 		for adj_t_id in self.territories[src_t_id]['adjacent_territories']:
-			 if self.territories[adj_t_id]['num_armies'] < smallest_territory:
-			 	smallest_territory = self.territories[adj_t_id]['num_armies']
+			 if self.own_territories[adj_t_id]['num_armies'] < smallest_territory:
+			 	smallest_territory = self.own_territories[adj_t_id]['num_armies']
 			 	smallest_territory_id = adj_t_id
 
 		self.api.transfer_armies(src_t_id, smallest_territory_id, num_armies_to_transfer)
@@ -172,7 +173,8 @@ class Game(object):
 		enemy_armies = 99999
 		for c in self.continents.itervalues():
 			c_id = c['continent']
-			if len(self.to_be_captured[c_id]) < Game.EASY_CONTINENT_LIMIT:
+			if ((len(self.to_be_captured[c_id]) < Game.EASY_CONTINENT_LIMIT) 
+						and (len(self.to_be_captured[c_id]) > 0)):
 				count = 0
 				for t_id in self.to_be_captured[c_id]:
 					count += self.enemy_territories[t_id]['num_armies']
@@ -198,13 +200,17 @@ class Game(object):
 					can_transfer = False
 			if can_transfer:
 				# transfer all but 1 to the lowest
-				num_armies_to_transfer = self.territories[t_id]['num_armies'] - 1
-				transfer_to_smallest_adjacent_territory(t_id, num_armies_to_transfer)
+				num_armies_to_transfer = self.own_territories[t_id]['num_armies'] - 1
+				self.transfer_to_smallest_adjacent_territory(t_id, num_armies_to_transfer)
+				self.ended = True
+				return
 
 	def play(self):
+		self.ended = False
 		self.updateGameState()
 		self.attack()
 		self.defend()
-		self.api.end_turn()
+		if (not self.ended):
+			self.api.end_turn()
 	
 
