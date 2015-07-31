@@ -27,8 +27,8 @@
       <file leaf-file-name="Brisk.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/Brisk.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.17216642" vertical-offset="15" max-vertical-offset="1500">
-              <caret line="9" column="31" selection-start-line="9" selection-start-column="31" selection-end-line="9" selection-end-column="31" />
+            <state vertical-scroll-proportion="0.17216642" vertical-offset="30" max-vertical-offset="1500">
+              <caret line="10" column="31" selection-start-line="10" selection-start-column="31" selection-end-line="10" selection-end-column="31" />
               <folding />
             </state>
           </provider>
@@ -42,6 +42,7 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
+        <option value="$PROJECT_DIR$/Brisk.py" />
         <option value="$PROJECT_DIR$/Brisk.py" />
       </list>
     </option>
@@ -275,8 +276,8 @@
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/Brisk.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.17216642" vertical-offset="15" max-vertical-offset="1500">
-          <caret line="9" column="31" selection-start-line="9" selection-start-column="31" selection-end-line="9" selection-end-column="31" />
+        <state vertical-scroll-proportion="0.17216642" vertical-offset="30" max-vertical-offset="1500">
+          <caret line="10" column="31" selection-start-line="10" selection-start-column="31" selection-end-line="10" selection-end-column="31" />
           <folding />
         </state>
       </provider>

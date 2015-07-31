@@ -3,11 +3,11 @@
 #{"territory": 2,"num_armies": 3}, {"territory": 4, "num_armies": 3}
 
 import Brisk
-import time, random, sys
+import time, random, sys, urllib2
 
 class Game(object):
 
-	EASY_CONTINENT_LIMIT = 2
+	EASY_CONTINENT_LIMIT = 3
 
 	def __init__(self):
 		self.api = Brisk.Brisk()
@@ -60,6 +60,7 @@ class Game(object):
 		pass
 
 	def attack_continent(self, c_id):
+		print 'Attacking continent\n\n'
 		armies_to_place = self.player_state['num_reserves']
 
 		# Fortify the territories
@@ -88,7 +89,10 @@ class Game(object):
 			self.attack_territory(t_id)
 
 	def attack_territory(self, target):
-		if (len(self.player_adj_territories[target]) == 0): return
+		if (len(self.player_adj_territories[target]) == 0): 
+			print 'target: ' + str(target)
+			print 'adj-territories: ' + str(self.player_adj_territories)
+			return
 		while True:
 			max_army = 0
 			attacker = None
@@ -96,17 +100,25 @@ class Game(object):
 				if (self.own_territories[t_id]['num_armies'] > max_army):
 					max_army = self.own_territories[t_id]['num_armies']
 					attacker = t_id
+			armies_to_attack_with = 0
+			if self.own_territories[t_id]['num_armies'] > 3:
+				armies_to_attack_with = 3
+			elif self.own_territories[t_id]['num_armies'] > 1:
+				armies_to_attack_with = self.own_territories[t_id]['num_armies'] - 1
 
 			try:
-				res = self.api.attack(attacker, target, self.own_territories[attacker]['num_armies']-1)
-				# self.own_territories[attacker]['num_armies'] = res['attacker_territory_armies_left']
-				# self.enemy_territories[target]['num_armies'] = res['defender_territory_armies_left']
+				res = self.api.attack(attacker, target, armies_to_attack_with)
+				print 'our territory attacking: ' + str(self.own_territories[attacker])
+				print 'their territory defending: ' + str(self.enemy_territories[target])
+				self.own_territories[attacker]['num_armies'] = res['attacker_territory_armies_left']
+				self.enemy_territories[target]['num_armies'] = res['defender_territory_armies_left']
 				print 'ATTACK ON ' + str(target) + ' SUCCESS: ' + str(res)
 			except:
+				print 'gameState: ' + str(self.api.get_game_state())
 				print 'attacker:' + str(attacker)
 				print 'target: ' + str(target)
-				print 'armies attacking: ' + str(self.own_territories[attacker]['num_armies'])
-				print 'target2' + str(self.enemy_territories[target])
+				print 'armies attacking: ' + str(self.own_territories[attacker]['num_armies']-1)
+				print 'target2' + str(self.enemy_territories[target])	
 				sys.exit()
 
 			if (res['defender_territory_captured'] or (res['attacker_territory_armies_left'] == 1)):
@@ -121,15 +133,19 @@ class Game(object):
 		largest_territory_id = 0
 		largest_territory = 0
 
+		if len(player_adj_territories) == 0:
+			return
+
 		for adj_t_id in player_adj_territories:
 			if self.own_territories[adj_t_id]['num_armies'] > largest_territory:
 				largest_territory = self.own_territories[adj_t_id]['num_armies']
 				largest_territory_id = adj_t_id
 
 		print self.player_state['num_reserves'], num_armies
-		print 'territory: ' + str(self.territories[largest_territory_id])
-		print 'is enemy: ' + str(largest_territory_id in self.enemy_territories)
+		print 'Adding ' + str(num_armies)
+		print 'Adding to: ' + str(self.own_territories[largest_territory_id])
 		self.api.place_armies(largest_territory_id, num_armies)
+		self.own_territories[largest_territory_id]['num_armies'] += num_armies
 
 	def helper_calc_army_around_enemy_territories(self):
 		self.player_adj_armies = {}
@@ -160,7 +176,7 @@ class Game(object):
 	def updateGameState(self):
 		self.player_state = self.api.get_player_status()
 		self.own_territories = self.list_to_dict(self.player_state['territories'], 'territory')
-		# print(self.player_state)
+		print(self.player_state)
 
 		self.enemy_state = self.api.get_enemy_status()
 		self.enemy_territories = self.list_to_dict(self.enemy_state['territories'], 'territory')
@@ -212,6 +228,9 @@ class Game(object):
 			to_attack = random.choice(self.enemy_territories.keys())
 			print 'to_attack = ' + str(to_attack)
 			print 'reserves: ' + str(self.player_state['num_reserves'])
+			if self.player_state['num_reserves'] == 0:
+				print self.api.get_player_status()
+				sys.exit()
 			self.place_armies(to_attack, self.player_state['num_reserves'])
 			self.attack_territory(to_attack)
 
@@ -228,16 +247,17 @@ class Game(object):
 				# transfer all but 1 to the lowest
 				num_armies_to_transfer = self.own_territories[t_id]['num_armies'] - 1
 				self.transfer_to_smallest_adjacent_territory(t_id, num_armies_to_transfer)
-				self.ended = True
 				return
 
 	def play(self):
 		print 'TURN START \n\n'
-		self.ended = False
+		print 'turn: ' + str(self.api.get_game_state()['num_turns_taken'])
 		self.updateGameState()
 		self.attack()
 		self.defend()
-		if (not self.ended):
+		print 'END TURN\n\n'
+		try:
 			self.api.end_turn()
-	
+		except:
+			pass
 
