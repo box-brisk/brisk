@@ -50,7 +50,9 @@ class Game(object):
 			else:
 				scaled_your_army = int(round(your_army * 1.0 / their_army * 10))
 				return prob_table[9][scaled_your_army]
-
+		else:
+			return prob_table[their_army][your_army]
+			
 	def lost_cost(self, territory):
 		pass
 
