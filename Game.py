@@ -30,6 +30,35 @@ class Game(object):
 		c = self.list_to_dict(res['continents'], 'continent')
 		return (t, c)
 
+	def prob_defend(self, your_army, their_army): 
+		prob_table = [
+		[0.42, 0.75, 0.92, 0.97, 0.99, 1, 1, 1, 1, 1], 
+		[0.11, 0.36, 0.66, 0.79, 0.89, 0.93, 0.97, 0.98, 0.99, 0.99], 
+		[0.03, 0.21, 0.47, 0.64, 0.77, 0.86, 0.91, 0.95, 0.97, 0.98], 
+		[0.01, 0.09, 0.31, 0.48, 0.64, 0.74, 0.83, 0.89, 0.93, 0.95], 
+		[0, 0.05, 0.21, 0.36, 0.51, 0.64, 0.74, 0.82, 0.87, 0.92], 
+		[0, 0.02, 0.13, 0.25, 0.4, 0.52, 0.64, 0.73, 0.81, 0.86], 
+		[0, 0.01, 0.08, 0.18, 0.3, 0.42, 0.54, 0.64, 0.73, 0.8], 
+		[0, 0, 0.05, 0.12, 0.22, 0.33, 0.45, 0.55, 0.65, 0.72], 
+		[0, 0, 0.03, 0.09, 0.16, 0.26, 0.36, 0.46, 0.56, 0.65],
+		[0, 0, 0.02, 0.06, 0.12, 0.19, 0.29, 0.38, 0.48, 0.57]
+		]
+		if (your_army > 10 or their_army > 10):
+			if (your_army >= their_army):
+				scaled_their_army = int(round(their_army * 1.0 / your_army * 10))
+				return prob_table[scaled_their_army][9]
+			else:
+				scaled_your_army = int(round(your_army * 1.0 / their_army * 10))
+				return prob_table[9][scaled_your_army]
+		else:
+			return prob_table[their_army][your_army]
+
+	def lost_cost(self, territory):
+		# lost cost = 
+		# a * (1 - prob_defend(your army, their army))
+		# a = 1.0/3 + (if continent is occupied, plus the continent cost) + coefficient * (percentage of territories occupied in the current continent)
+		pass
+
 	def attack_continent(self, c_id):
 		armies_to_place = self.player_state['num_reserves']
 
