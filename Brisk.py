@@ -3,7 +3,7 @@ import urllib2
 
 class Brisk(object):
     HOST = 'http://www.briskchallenge.com'
-    TEAM_NAME = 'bro'
+    TEAM_NAME = 'bravo'
     API_TOKEN = 'ae4555f42028c91105194beb267ac48d122dddcd'
 
     def __init__(self, game_id=False, bot_id=1):

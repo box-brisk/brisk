@@ -94,10 +94,30 @@ class Game(object):
 			value = calc(enemy_t)
 			for adj_t in self.territories[enemy_t]['adjacent_territories']:
 				if adj_t in self.enemy_territories:
-					value += calc(adj_t) / len(self.territories[enemy_t]['adjacent_territories']) * 0.5
+					value += calc(adj_t) / len(self.territories[enemy_t]['adjacent_territories']) * 0.65
 			return value
 
 		return sorted(targets, key=attack_heuristics, reverse=True)
+
+	def order_defend_options(self, borders):
+		def is_own(t_id): return t_id in self.own_territories
+		borders = filter(is_own, borders)
+
+		def calc(own_t):
+			c_id = self.territories[own_t]['continent']
+			a = 1 - min(Game.EASY_CONTINENT_LIMIT, (len(self.continents[c_id]['territories'])-(len(self.to_be_captured[c_id])-1))/((Game.EASY_CONTINENT_LIMIT*1.0)**2))
+			b = 1 if (len(self.to_be_captured[c_id]) == 0) else 0
+			return (a+b)*self.continents[c_id]['continent_bonus']-0.5*self.own_territories[own_t]['num_armies']
+
+		def defend_heuristics(own_t):
+			value = calc(own_t)
+			for adj_t in self.territories[own_t]['adjacent_territories']:
+				if adj_t in self.own_territories:
+					value += calc(adj_t) / len(self.territories[own_t]['adjacent_territories']) * 0.5
+			return value
+
+		return sorted(borders, key=defend_heuristics, reverse=True)
+
 
 	def attack_continent(self, c_id):
 		print 'Attacking continent\n\n'
@@ -129,11 +149,9 @@ class Game(object):
 			self.attack_territory(t_id)
 
 	def helper_get_border(self):
-		self.updateGameState
-		all_targets = self.order_attack_targets(list(set(all_targets)))
-		(territory_to_put, current_army) = self.place_armies_helper(all_targets[0])
-		return territory_to_put
-
+		self.updateGameState()
+		borders = self.order_defend_options(self.borders)
+		return borders[0]
 
 	def attack_territory(self, target):
 		while True:
@@ -170,13 +188,9 @@ class Game(object):
 					if (adj_t in self.enemy_territories) and (adj_t != target):
 						targets.append(adj_t)
 
-
 				if (self.own_territories[attacker]['num_armies'] > 2):
 					try:
-						if len(target == 0):
-							border = self.helper_get_border()
-							self.api.transfer_armies(attacker, border, self.own_territories[attacker]['num_armies']-2)
-						else:
+						if len(target != 0):
 							self.api.transfer_armies(attacker, target, self.own_territories[attacker]['num_armies']-2)
 							self.updateGameState()
 					except:
@@ -231,6 +245,7 @@ class Game(object):
 		self.adj_player_armies = {}
 		self.adj_player_territories = {}
 		self.adj_enemy_territories = {}
+		self.borders = []
 		for t_id in self.enemy_territories:
 			t = self.territories[t_id]
 			self.adj_player_armies[t['territory']] = 0
@@ -246,6 +261,7 @@ class Game(object):
 			for adjacent_t in player_t['adjacent_territories']:
 				if adjacent_t in self.enemy_territories:
 					self.adj_enemy_territories[player_t['territory']].append(adjacent_t)
+			if t_id in self.adj_enemy_territories: self.borders.append(t_id)
 
 	def transfer_to_smallest_adjacent_territory(self, src_t_id, num_armies_to_transfer):
 		if num_armies_to_transfer == 0:
@@ -300,61 +316,69 @@ class Game(object):
 	def attack(self):
 		to_attack = None
 		enemy_armies = sys.maxint
-		for c in self.continents.itervalues():
-			c_id = c['continent']
-			if ((len(self.to_be_captured[c_id]) < Game.EASY_CONTINENT_LIMIT) 
-						and (len(self.to_be_captured[c_id]) > 0)):
-				count = 0
-				for t_id in self.to_be_captured[c_id]:
-					count += self.enemy_territories[t_id]['num_armies']
-				if (count < enemy_armies):
-					to_attack = c_id
-					enemy_armies = count
+		# for c in self.continents.itervalues():
+		# 	c_id = c['continent']
+		# 	if ((len(self.to_be_captured[c_id]) < Game.EASY_CONTINENT_LIMIT) 
+		# 				and (len(self.to_be_captured[c_id]) > 0)):
+		# 		count = 0
+		# 		for t_id in self.to_be_captured[c_id]:
+		# 			count += self.enemy_territories[t_id]['num_armies']
+		# 		if (count < enemy_armies):
+		# 			to_attack = c_id
+		# 			enemy_armies = count
 
-		if (to_attack):
-			self.attack_continent(to_attack)
-		else:
-			if self.player_state['num_reserves'] == 0:
-				print self.api.get_player_status()
-				sys.exit()
+		# if (to_attack):
+		# 	self.attack_continent(to_attack)
+		# else:
 
-			# to_attack = random.choice(self.enemy_territories.keys())
-			all_targets = []
-			for c_id in self.adj_enemy_territories:
-				all_targets.extend(self.adj_enemy_territories[c_id])
-			all_targets = self.order_attack_targets(list(set(all_targets)))
+		if self.player_state['num_reserves'] == 0:
+			print self.api.get_player_status()
+			sys.exit()
 
-			index = 0
-			reserves = self.player_state['num_reserves']
-			attack_list = []
-			while ((reserves > 0) and index < len(all_targets)):
-				to_attack = all_targets[index]
-				(territory_to_put, current_army) = self.place_armies_helper(to_attack)
-				to_place = max(0, min(reserves, self.enemy_territories[to_attack]['num_armies'] + 4 - current_army))
-				reserves = reserves - to_place
-				print reserves, to_place
-				self.place_armies(to_attack, to_place)
-				attack_list.append(to_attack)
-				index += 1
-			if (reserves > 0):
-				self.place_armies(all_targets[0], reserves)
-			map(self.attack_territory, attack_list)
+		# to_attack = random.choice(self.enemy_territories.keys())
+		all_targets = []
+		for c_id in self.adj_enemy_territories:
+			all_targets.extend(self.adj_enemy_territories[c_id])
+		all_targets = self.order_attack_targets(list(set(all_targets)))
+
+		index = 0
+		reserves = self.player_state['num_reserves']
+		attack_list = []
+		while ((reserves > 0) and index < len(all_targets)):
+			to_attack = all_targets[index]
+			(territory_to_put, current_army) = self.place_armies_helper(to_attack)
+			to_place = max(0, min(reserves, self.enemy_territories[to_attack]['num_armies'] + 4 - current_army))
+			reserves = reserves - to_place
+			print reserves, to_place
+			self.place_armies(to_attack, to_place)
+			attack_list.append(to_attack)
+			index += 1
+		if (reserves > 0):
+			self.place_armies(all_targets[0], reserves)
+		map(self.attack_territory, attack_list)
 
 	def defend(self):
-		territories_that_can_transfer = []
-		# Find our territories that can transfer
+		self.updateGameState()
+		non_border_territory_with_most_army = None
+		most_army = 0
 		for t_id in self.own_territories:
-			t = self.territories[t_id]
-			can_transfer = True
-			for adj_t_id in t['adjacent_territories']:
-				if adj_t_id in self.enemy_territories:
-					can_transfer = False
-			if can_transfer:
-				# transfer all but 3 to the lowest
-				if (self.own_territories[t_id]['num_armies'] > 3):
-					num_armies_to_transfer = self.own_territories[t_id]['num_armies'] - 3
-					self.transfer_to_smallest_adjacent_territory(t_id, num_armies_to_transfer)
-				return
+			if t_id not in self.borders:
+				if self.own_territories[t_id]['num_armies'] > most_army:
+					most_army = self.own_territories[t_id]['num_armies']
+					non_border_territory_with_most_army = t_id
+		if non_border_territory_with_most_army is None:
+			for t_id in self.own_territories:
+				if t_id in self.borders:
+					if self.own_territories[t_id]['num_armies'] > most_army:
+						most_army = self.own_territories[t_id]['num_armies']
+						non_border_territory_with_most_army = t_id
+
+		to_trasfer = max(most_army - 2, 0)
+		try:
+			self.api.transfer_armies(non_border_territory_with_most_army, self.helper_get_border(), to_trasfer)
+			self.updateGameState()
+		except:
+			pass
 
 	def play(self):
 		print '---------------------------------'
