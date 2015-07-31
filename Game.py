@@ -68,12 +68,26 @@ class Game(object):
 					max_army = self.own_territories[t_id]['num_armies']
 					attacker = t_id
 
-			res = self.api.attack(attacker, target, self.own_territories[attacker]['num_armies']-1)
-			print res
+			try:
+				res = self.api.attack(attacker, target, self.own_territories[attacker]['num_armies']-1)
+				# self.own_territories[attacker]['num_armies'] = res['attacker_territory_armies_left']
+				# self.enemy_territories[target]['num_armies'] = res['defender_territory_armies_left']
+				print 'ATTACK ON ' + str(target) + ' SUCCESS: ' + str(res)
+			except:
+				print 'attacker:' + str(attacker)
+				print 'target: ' + str(target)
+				print 'armies attacking: ' + str(self.own_territories[attacker]['num_armies'])
+				print 'target2' + str(self.enemy_territories[target])
+				sys.exit()
+
 			if (res['defender_territory_captured'] or (res['attacker_territory_armies_left'] == 1)):
+				print 'CANNOT ATTACK \n\n'
 				return
 
 	def place_armies(self, t_id, num_armies):
+		if num_armies == 0:
+			return
+
 		player_adj_territories = self.player_adj_territories[t_id]
 		largest_territory_id = 0
 		largest_territory = 0
@@ -84,6 +98,8 @@ class Game(object):
 				largest_territory_id = adj_t_id
 
 		print self.player_state['num_reserves'], num_armies
+		print 'territory: ' + str(self.territories[largest_territory_id])
+		print 'is enemy: ' + str(largest_territory_id in self.enemy_territories)
 		self.api.place_armies(largest_territory_id, num_armies)
 
 	def helper_calc_army_around_enemy_territories(self):
@@ -99,6 +115,9 @@ class Game(object):
 					self.player_adj_territories[t['territory']].append(adjacent_t)
 
 	def transfer_to_smallest_adjacent_territory(self, src_t_id, num_armies_to_transfer):
+		if num_armies_to_transfer == 0:
+			return
+
 		smallest_territory = sys.maxint;
 		smallest_territory_id = 0;
 
@@ -162,6 +181,8 @@ class Game(object):
 			self.attack_continent(to_attack)
 		else:
 			to_attack = random.choice(self.enemy_territories.keys())
+			print 'to_attack = ' + str(to_attack)
+			print 'reserves: ' + str(self.player_state['num_reserves'])
 			self.place_armies(to_attack, self.player_state['num_reserves'])
 			self.attack_territory(to_attack)
 
@@ -182,6 +203,7 @@ class Game(object):
 				return
 
 	def play(self):
+		print 'TURN START \n\n'
 		self.ended = False
 		self.updateGameState()
 		self.attack()

@@ -18,6 +18,7 @@ def main():
 	while (True):
 		res = game.api.get_player_status(True)
 		if (res['eliminated'] or res['winner']):
+			print res
 			return
 		if (res['current_turn']):
 			game.play()
