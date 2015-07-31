@@ -110,6 +110,7 @@ class Game(object):
 			# print 'target is enemy :' + str(target in self.enemy_territories)
 
 			if len(self.player_adj_territories[target]) == 0:
+				print 'ATTACKING TERRITORY AT A DISTANCE, EXIT'
 				return
 			for t_id in self.player_adj_territories[target]:
 				if (self.own_territories[t_id]['num_armies'] > max_army):
@@ -166,7 +167,9 @@ class Game(object):
 			return
 
 		player_adj_territories = self.player_adj_territories[t_id]
-		if len(player_adj_territories) == 0: return
+		if len(player_adj_territories) == 0:
+			print 'NO ADJACENT PLAYER TERRITORIES, CANNOT PLACE ARMIES'
+			return
 		largest_territory_id = 0
 		largest_territory = 0
 
@@ -274,6 +277,11 @@ class Game(object):
 				sys.exit()
 			self.place_armies(to_attack, self.player_state['num_reserves'])
 			self.attack_territory(to_attack)
+
+		if self.player_state['num_reserves'] > 0:
+			random_player_territory = random.choice(self.own_territories.keys())
+			print 'Placing remaining reserves at ' + str(random_player_territory)
+			self.api.place_armies(random_player_territory, self.player_state['num_reserves'])
 
 	def defend(self):
 		territories_that_can_transfer = []
